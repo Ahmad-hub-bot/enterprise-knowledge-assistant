@@ -1,17 +1,16 @@
 import os
 import glob
-import shutil
 import pandas as pd
 from langchain_community.document_loaders import PyPDFLoader, Docx2txtLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import FAISS
 from langchain_groq import ChatGroq
 from langchain_core.documents import Document
 from langgraph.graph import StateGraph, END
 from typing import TypedDict, List, Optional
 
-CHROMA_PATH = "/tmp/chroma_db"
+FAISS_PATH = "/tmp/faiss_index"
 DOCS_PATH = "documents"
 
 # ---------- State ----------
@@ -23,7 +22,7 @@ class GraphState(TypedDict):
     answer: Optional[str]
     citation: Optional[str]
 
-# ---------- Load & index ----------
+# ---------- Load documents ----------
 def load_documents():
     all_docs = []
 
@@ -86,26 +85,20 @@ def load_documents():
     return all_docs
 
 
+# ---------- Vector store ----------
 def build_vector_store():
-    if os.path.exists(CHROMA_PATH):
-        shutil.rmtree(CHROMA_PATH)
-
     docs = load_documents()
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = splitter.split_documents(docs)
-
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    vector_store = Chroma.from_documents(
-        documents=chunks,
-        embedding=embeddings,
-        persist_directory=CHROMA_PATH
-    )
+    vector_store = FAISS.from_documents(chunks, embeddings)
+    vector_store.save_local(FAISS_PATH)
     return vector_store
 
 
 def load_vector_store():
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    return Chroma(persist_directory=CHROMA_PATH, embedding_function=embeddings)
+    return FAISS.load_local(FAISS_PATH, embeddings, allow_dangerous_deserialization=True)
 
 
 # ---------- LLM ----------
