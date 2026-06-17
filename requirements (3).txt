@@ -1,0 +1,12 @@
+langchain
+langgraph
+langchain-groq
+langchain-community
+langchain-huggingface
+chromadb
+sentence-transformers
+streamlit
+pypdf
+docx2txt
+pandas
+openpyxl
