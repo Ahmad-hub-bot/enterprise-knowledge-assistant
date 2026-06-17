@@ -25,7 +25,7 @@ with st.sidebar:
 @st.cache_resource(show_spinner="Loading pipeline...")
 def init_pipeline():
     llm = get_llm()
-    if os.path.exists("/tmp/chroma_db"):
+    if os.path.exists("/tmp/faiss_index"):
         vector_store = load_vector_store()
     else:
         vector_store = build_vector_store()
